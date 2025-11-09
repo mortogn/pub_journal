@@ -1,3 +1,14 @@
+export class ApiError extends Error {
+  status: number;
+  data?: Record<string, unknown>;
+
+  constructor(message: string, status: number, data?: Record<string, unknown>) {
+    super(message);
+    this.status = status;
+    this.data = data;
+  }
+}
+
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
 
@@ -16,8 +27,16 @@ const api = async <T>(
     },
   });
 
+  const body = await response.json();
+
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    const message =
+      body && "message" in body
+        ? body.message
+        : "error" in body
+        ? body.error
+        : "An unknown error occurred, Please try again later.";
+    throw new ApiError(message, response.status, body);
   }
 
   return {

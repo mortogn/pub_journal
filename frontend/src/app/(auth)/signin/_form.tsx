@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
+import api, { ApiError } from "@/lib/api";
 import { localstorageSet } from "@/lib/localstorage";
+import { useState } from "react";
+import ErrorBar from "@/components/common/error-bar";
 
 const loginSchema = z.object({
   email: z.email("Invalid email address"),
@@ -24,6 +26,8 @@ const loginSchema = z.object({
 type FormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
+  const [error, setError] = useState<string | null>(null);
+
   const form = useForm<FormValues>({
     defaultValues: {
       email: "",
@@ -33,19 +37,28 @@ const LoginForm = () => {
   });
 
   const submitHandler = async (data: FormValues) => {
-    const { data: signInResult } = await api<{
-      accessToken: string;
-    }>("/auth/signin", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    try {
+      const { data: signInResult } = await api<{
+        accessToken: string;
+      }>("/auth/signin", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
 
-    localstorageSet("authToken", signInResult.accessToken);
+      localstorageSet("authToken", signInResult.accessToken);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred, Please try again later.");
+      }
+    }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submitHandler)} className="space-y-4">
+        {error && <ErrorBar message={error} />}
         <FormField
           control={form.control}
           name="email"
