@@ -30,3 +30,18 @@ model User {
   updatedAt DateTime @updatedAt
   role      UserRole @default(AUTHOR)
 }
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  PUBLISHED
+}
+
+model Submission {
+  id            String @id @default(cuid())
+  title         String
+  abstract      String
+  manuscriptURL String
+}
