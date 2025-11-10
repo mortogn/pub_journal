@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import bcrypt from 'bcrypt';
 import { SignInDto } from './dto/sign-in.dto';
 import { JwtService } from '@nestjs/jwt';
+import { AuthTokenPayload } from './token.type';
 
 @Injectable()
 export class AuthService {
@@ -33,7 +34,13 @@ export class AuthService {
       },
     });
 
-    const payload = { sub: user.id, email: user.email };
+    const payload: AuthTokenPayload = {
+      sub: user.id,
+      email: user.email,
+      iat: 0,
+      exp: 0,
+      role: '',
+    };
 
     return {
       accessToken: await this.jwtService.signAsync(payload, {
@@ -60,7 +67,13 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, email: user.email };
+    const payload: AuthTokenPayload = {
+      sub: user.id,
+      email: user.email,
+      iat: 0,
+      exp: 0,
+      role: '',
+    };
 
     return {
       accessToken: await this.jwtService.signAsync(payload, {
