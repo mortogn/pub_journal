@@ -37,9 +37,7 @@ export class AuthService {
     const payload: AuthTokenPayload = {
       sub: user.id,
       email: user.email,
-      iat: 0,
-      exp: 0,
-      role: '',
+      role: user.role,
     };
 
     return {
@@ -70,9 +68,7 @@ export class AuthService {
     const payload: AuthTokenPayload = {
       sub: user.id,
       email: user.email,
-      iat: 0,
-      exp: 0,
-      role: '',
+      role: user.role,
     };
 
     return {

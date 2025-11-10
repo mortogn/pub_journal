@@ -40,7 +40,7 @@ const api = async <T>(
   }
 
   return {
-    data: (await response.json()) as T,
+    data: body as T,
     status: response.status,
   };
 };

@@ -7,6 +7,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { APP_PIPE } from '@nestjs/core';
 import { ValidationPipe } from './common/pipes/validation.pipe';
 import { JwtModule } from '@nestjs/jwt';
+import { SubmissionsModule } from './submissions/submissions.module';
+import { R2Module } from './r2/r2.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { JwtModule } from '@nestjs/jwt';
       global: true,
       secret: process.env.JWT_SECRET || 'defaultSecret',
     }),
+    SubmissionsModule,
+    R2Module,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [

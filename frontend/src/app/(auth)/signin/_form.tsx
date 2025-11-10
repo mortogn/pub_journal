@@ -37,6 +37,7 @@ const LoginForm = () => {
   });
 
   const submitHandler = async (data: FormValues) => {
+    setError(null);
     try {
       const { data: signInResult } = await api<{
         accessToken: string;
@@ -47,6 +48,7 @@ const LoginForm = () => {
 
       localstorageSet("authToken", signInResult.accessToken);
     } catch (err) {
+      console.error(err);
       if (err instanceof ApiError) {
         setError(err.message);
       } else {

@@ -22,16 +22,18 @@ enum UserRole {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  fullname  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  role      UserRole @default(AUTHOR)
+  id          String       @id @default(cuid())
+  email       String       @unique
+  password    String
+  fullname    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  role        UserRole     @default(AUTHOR)
+  submissions Submission[]
 }
 
 enum SubmissionStatus {
+  DRAFT
   SUBMITTED
   UNDER_REVIEW
   ACCEPTED
@@ -40,8 +42,24 @@ enum SubmissionStatus {
 }
 
 model Submission {
-  id            String @id @default(cuid())
-  title         String
-  abstract      String
-  manuscriptURL String
+  id             String           @id @default(cuid())
+  title          String
+  abstract       String
+  manuscriptPath String?
+  thumbnailPath  String?
+  status         SubmissionStatus @default(DRAFT)
+  keywords       String[]
+  version        Int              @default(1)
+
+  // will be added by editor upon acceptance
+  type        String?
+  department  String?
+  description String?
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
 }

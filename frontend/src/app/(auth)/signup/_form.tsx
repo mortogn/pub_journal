@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api";
+import api, { ApiError } from "@/lib/api";
 import { localstorageSet } from "@/lib/localstorage";
+import { useState } from "react";
+import ErrorBar from "@/components/common/error-bar";
 
 const signUpSchema = z
   .object({
@@ -31,6 +33,8 @@ const signUpSchema = z
 type FormValues = z.infer<typeof signUpSchema>;
 
 const SignUpForm = () => {
+  const [error, setError] = useState<string | null>(null);
+
   const form = useForm<FormValues>({
     defaultValues: {
       fullname: "",
@@ -42,18 +46,28 @@ const SignUpForm = () => {
   });
 
   const submitHandler = async (data: FormValues) => {
-    const { data: signUpResult } = await api<{
-      accessToken: string;
-    }>("/auth/signup", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    setError(null);
+    try {
+      const { data: signUpResult } = await api<{
+        accessToken: string;
+      }>("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
 
-    localstorageSet("authToken", signUpResult.accessToken);
+      localstorageSet("authToken", signUpResult.accessToken);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    }
   };
 
   return (
     <Form {...form}>
+      {error && <ErrorBar message={error} />}
       <form onSubmit={form.handleSubmit(submitHandler)} className="space-y-4">
         <FormField
           control={form.control}
