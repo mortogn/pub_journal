@@ -18,7 +18,7 @@ import { useState } from "react";
 import ErrorBar from "@/components/common/error-bar";
 import { setCookie } from "cookies-next";
 import { User } from "@/types/models";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { UserRole } from "@/types";
 
 const signUpSchema = z
