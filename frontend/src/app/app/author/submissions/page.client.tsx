@@ -1,13 +1,13 @@
 "use client";
 
-import Keyword from "@/components/submissions/keyword";
-import StatusBadge from "@/components/submissions/status-badge";
+import Submission from "@/components/submissions/submission";
 import { Spinner } from "@/components/ui/spinner";
 import api from "@/lib/api";
-import { Submission } from "@/types/models";
+import type { Submission as TSubmission } from "@/types/models";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import React from "react";
+import { getCookie } from "cookies-next";
 
 export default function SubmissionsClientPage() {
   const {
@@ -17,10 +17,10 @@ export default function SubmissionsClientPage() {
   } = useQuery({
     queryKey: ["submissions"],
     queryFn: async () => {
-      return api<Submission[]>(`/submissions`, {
+      return api<TSubmission[]>(`/submissions`, {
         method: "GET",
         headers: {
-          authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          authorization: `Bearer ${getCookie("ac-token")}`,
         },
       });
     },
@@ -43,22 +43,7 @@ export default function SubmissionsClientPage() {
               href={`/app/author/submissions/${submission.id}`}
               key={submission.id}
             >
-              <div className="py-3 rounded-md mb-4 space-y-3 group">
-                <h2 className="text-lg font-medium tracking-tight group-hover:underline">
-                  {submission.title}
-                </h2>
-                <p className="line-clamp-2 text-sm tracking-wide">
-                  {submission.abstract}
-                </p>
-                <div className="space-y-1 space-x-1">
-                  {submission.keywords.map((keyword) => (
-                    <Keyword key={keyword}>{keyword}</Keyword>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  <StatusBadge status={submission.status} />
-                </p>
-              </div>
+              <Submission data={submission} />
             </Link>
           ))
         : null}

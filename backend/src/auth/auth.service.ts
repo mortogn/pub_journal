@@ -40,7 +40,10 @@ export class AuthService {
       role: user.role,
     };
 
+    const { password: _, ...userWithoutPassword } = user;
+
     return {
+      data: userWithoutPassword,
       accessToken: await this.jwtService.signAsync(payload, {
         expiresIn: '7d',
         algorithm: 'HS256',
@@ -71,7 +74,10 @@ export class AuthService {
       role: user.role,
     };
 
+    const { password: _, ...userWithoutPassword } = user;
+
     return {
+      data: userWithoutPassword,
       accessToken: await this.jwtService.signAsync(payload, {
         expiresIn: '7d',
         algorithm: 'HS256',

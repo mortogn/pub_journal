@@ -5,11 +5,13 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "../ui/sidebar";
 import Link from "next/link";
+import Logo from "./logo";
 
 export type SidebarItem = {
   label: string;
@@ -25,6 +27,11 @@ const AppSidebar: FC<Props> = ({ items }) => {
   return (
     <Sidebar>
       <SidebarContent>
+        <SidebarHeader className="flex items-center justify-center my-2">
+          <span className="scale-[0.75]">
+            <Logo />
+          </span>
+        </SidebarHeader>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>

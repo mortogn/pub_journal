@@ -14,9 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import api, { ApiError } from "@/lib/api";
-import { localstorageSet } from "@/lib/localstorage";
 import { useState } from "react";
 import ErrorBar from "@/components/common/error-bar";
+import { setCookie } from "cookies-next";
+import { User } from "@/types/models";
+import { useRouter } from "next/router";
+import { UserRole } from "@/types";
 
 const signUpSchema = z
   .object({
@@ -35,6 +38,8 @@ type FormValues = z.infer<typeof signUpSchema>;
 const SignUpForm = () => {
   const [error, setError] = useState<string | null>(null);
 
+  const router = useRouter();
+
   const form = useForm<FormValues>({
     defaultValues: {
       fullname: "",
@@ -50,12 +55,29 @@ const SignUpForm = () => {
     try {
       const { data: signUpResult } = await api<{
         accessToken: string;
+        data: Omit<User, "password">;
       }>("/auth/signup", {
         method: "POST",
         body: JSON.stringify(data),
       });
 
-      localstorageSet("authToken", signUpResult.accessToken);
+      setCookie("ac-token", signUpResult.accessToken);
+      switch (signUpResult.data.role) {
+        case UserRole.AUTHOR:
+          router.push("/app/author/dashboard");
+          break;
+        case UserRole.REVIEWER:
+          router.push("/app/reviewer/dashboard");
+          break;
+        case UserRole.ADMIN:
+          router.push("/app/admin/dashboard");
+          break;
+        case UserRole.EDITOR:
+          router.push("/app/editor/dashboard");
+          break;
+        default:
+          router.push("/");
+      }
     } catch (error) {
       if (error instanceof ApiError) {
         setError(error.message);

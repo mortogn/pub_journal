@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { R2Module } from './r2/r2.module';
 import { FilesModule } from './files/files.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { FilesModule } from './files/files.module';
     SubmissionsModule,
     R2Module,
     FilesModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [

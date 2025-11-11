@@ -10,6 +10,7 @@ import ErrorBar from "@/components/common/error-bar";
 import PageHeading from "@/components/common/page-heading";
 import StatusBadge from "@/components/submissions/status-badge";
 import Keyword from "@/components/submissions/keyword";
+import { getCookie } from "cookies-next";
 // using built-in date formatting to avoid extra deps
 
 type Props = {
@@ -31,7 +32,7 @@ export default function SubmissionDetailsClientPage({ submissionId }: Props) {
       return api<Submission>(`/submissions/${submissionId}`, {
         method: "GET",
         headers: {
-          authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          authorization: `Bearer ${getCookie("ac-token")}`,
         },
       });
     },
@@ -45,7 +46,7 @@ export default function SubmissionDetailsClientPage({ submissionId }: Props) {
       return api<Submission>(`/submissions/${submissionId}/publish`, {
         method: "PUT",
         headers: {
-          authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          authorization: `Bearer ${getCookie("ac-token")}`,
         },
       });
     },

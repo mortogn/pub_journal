@@ -15,9 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import api, { ApiError } from "@/lib/api";
-import { localstorageGet } from "@/lib/localstorage";
 import { useState } from "react";
 import ErrorBar from "@/components/common/error-bar";
+import { getCookie } from "cookies-next";
 
 const submissionSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -57,7 +57,7 @@ const CreateSubmissionForm = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localstorageGet("authToken")}`,
+        Authorization: `Bearer ${getCookie("ac-token")}`,
       },
       body: JSON.stringify({
         filename: file.name,
@@ -99,7 +99,7 @@ const CreateSubmissionForm = () => {
       await api("/submissions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${localstorageGet("authToken")}`,
+          Authorization: `Bearer ${getCookie("ac-token")}`,
         },
         body: JSON.stringify({
           title: data.title,
