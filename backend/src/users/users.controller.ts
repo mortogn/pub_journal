@@ -18,6 +18,11 @@ export class UsersController {
     return this.usersService.list(user);
   }
 
+  @Get('reviewers')
+  listReviewers(@CurrentUser() user: AuthTokenPayload) {
+    return this.usersService.listReviewers(user);
+  }
+
   @Patch('role')
   updateRole(
     @CurrentUser() user: AuthTokenPayload,

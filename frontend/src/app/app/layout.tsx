@@ -18,6 +18,16 @@ const AdminSidebarItems: SidebarItem[] = [
   { label: "Manage Users", href: "/app/admin/users" },
 ];
 
+const EditorSidebarItems: SidebarItem[] = [
+  { label: "Dashboard", href: "/app/editor/dashboard" },
+  { label: "Submissions", href: "/app/editor/submissions" },
+];
+
+const ReviewerSidebarItems: SidebarItem[] = [
+  { label: "Dashboard", href: "/app/reviewer/dashboard" },
+  { label: "Submissions", href: "/app/reviewer/submissions" },
+];
+
 export default async function AppLayout({
   children,
 }: {
@@ -52,6 +62,10 @@ function getSidebarItemsForRole(role: string | undefined): SidebarItem[] {
       return AuthorSidebarItems;
     case "ADMIN":
       return AdminSidebarItems;
+    case "EDITOR":
+      return EditorSidebarItems;
+    case "REVIEWER":
+      return ReviewerSidebarItems;
     default:
       return [];
   }

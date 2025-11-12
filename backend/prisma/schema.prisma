@@ -30,6 +30,11 @@ model User {
   updatedAt   DateTime     @updatedAt
   role        UserRole     @default(AUTHOR)
   submissions Submission[]
+
+  assignments     Assignment[] @relation("ReviewerAssignments")
+  editAssignments Assignment[] @relation("EditorAssignments")
+  reviews         Review[]
+  decisions       Decision[]
 }
 
 enum SubmissionStatus {
@@ -39,6 +44,7 @@ enum SubmissionStatus {
   ACCEPTED
   REJECTED
   PUBLISHED
+  REVISION_REQUIRED
 }
 
 model Submission {
@@ -59,7 +65,82 @@ model Submission {
   author   User   @relation(fields: [authorId], references: [id])
   authorId String
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  decision   Decision?
+  decisionId String?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   publishedAt DateTime?
+  assignments Assignment[]
+  reviews     Review[]
+
+  issue   Issue?  @relation(fields: [issueId], references: [id])
+  issueId String?
+}
+
+model Assignment {
+  id           String   @id @default(cuid())
+  submissionId String
+  reviewerId   String
+  editorId     String
+  assignedAt   DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+  reviewer   User       @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
+  editor     User       @relation("EditorAssignments", fields: [editorId], references: [id])
+
+  @@unique([submissionId, reviewerId])
+}
+
+enum Recommendation {
+  ACCEPT
+  MINOR_REVISION
+  MAJOR_REVISION
+  REJECT
+}
+
+model Review {
+  id               String          @id @default(cuid())
+  submissionId     String
+  reviewerId       String
+  commentsToAuthor String?
+  commentsToEditor String?
+  recommendation   Recommendation?
+  score            Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+  reviewer   User       @relation(fields: [reviewerId], references: [id])
+}
+
+enum DecisionOutcome {
+  ACCEPTED
+  REJECTED
+  REVISION_REQUIRED
+}
+
+model Decision {
+  id           String   @id @default(cuid())
+  submissionId String   @unique
+  editorId     String
+  decisionAt   DateTime @default(now())
+
+  outcome    DecisionOutcome
+  letterPath String?
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+  editor     User       @relation(fields: [editorId], references: [id])
+}
+
+model Issue {
+  id          String       @id @default(cuid())
+  volume      Int
+  number      Int
+  year        Int
+  publishedAt DateTime     @default(now())
+  papers      Submission[]
+
+  @@unique([volume, number, year])
 }

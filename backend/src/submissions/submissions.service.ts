@@ -6,6 +6,10 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { AuthTokenPayload } from 'src/auth/token.type';
+import { AssignSubmissionDto } from './dto/assign-submission.dto';
+import { ReviewSubmissionDto } from './dto/review-submission.dto';
+import { CreateDecisionDto } from './dto/create-decision.dto';
+import { SubmissionQueryDto } from './dto/submission-query.dto';
 
 @Injectable()
 export class SubmissionsService {
@@ -30,37 +34,162 @@ export class SubmissionsService {
   async getSubmissionById(user: AuthTokenPayload, id: string) {
     const submission = await this.prismaService.submission.findFirst({
       where: { id },
+      include: {
+        reviews: {
+          include: {
+            reviewer: {
+              select: { id: true, fullname: true },
+            },
+          },
+        },
+        author: {
+          select: { id: true, fullname: true },
+        },
+        assignments: {
+          include: {
+            reviewer: { select: { id: true, fullname: true } },
+            editor: { select: { id: true, fullname: true } },
+          },
+        },
+        decision: true,
+      },
     });
 
     if (!submission) {
       throw new NotFoundException('Submission not found');
     }
 
-    if (submission?.status != 'PUBLISHED') {
-      if (
-        submission.authorId !== user.sub &&
-        user.role !== 'ADMIN' &&
-        user.role !== 'EDITOR'
-      ) {
-        throw new ForbiddenException(
-          'You do not have access to this submission',
-        );
-      }
+    // Visibility rules
+    // Public (any authenticated user) can view ACCEPTED or PUBLISHED submissions
+    if (submission.status === 'ACCEPTED') {
+      return submission;
+    }
+
+    // Otherwise only author, editor/admin, or assigned reviewer can view
+    const isAuthor = submission.authorId === user.sub;
+    const isEditorOrAdmin = user.role === 'ADMIN' || user.role === 'EDITOR';
+    const isAssignedReviewer = submission.assignments?.some(
+      (a) => a.reviewerId === user.sub,
+    );
+
+    if (!isAuthor && !isEditorOrAdmin && !isAssignedReviewer) {
+      throw new ForbiddenException('You do not have access to this submission');
     }
 
     return submission;
   }
 
-  async listSubmissions(user: AuthTokenPayload) {
-    if (user.role === 'ADMIN' || user.role === 'EDITOR') {
+  async publicSubmissionById(id: string) {
+    const submission = await this.prismaService.submission.findFirst({
+      where: { id, status: 'ACCEPTED' },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullname: true,
+          },
+        },
+        decision: {
+          select: {
+            decisionAt: true,
+          },
+        },
+      },
+    });
+    if (!submission) {
+      throw new NotFoundException('Submission not found or not accepted');
+    }
+    return submission;
+  }
+
+  async listSubmissions(user?: AuthTokenPayload, query?: SubmissionQueryDto) {
+    if (user?.role === 'ADMIN' || user?.role === 'EDITOR') {
       return this.prismaService.submission.findMany({
         orderBy: { createdAt: 'desc' },
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullname: true,
+            },
+          },
+          decision: {
+            select: {
+              id: true,
+              outcome: true,
+            },
+          },
+          _count: {
+            select: {
+              reviews: true,
+              assignments: true,
+            },
+          },
+        },
+      });
+    }
+
+    // Reviewer: submissions they are assigned to
+    if (user?.role === 'REVIEWER') {
+      return this.prismaService.submission.findMany({
+        where: {
+          assignments: {
+            some: { reviewerId: user.sub },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          author: {
+            select: { id: true, fullname: true },
+          },
+          decision: {
+            select: { id: true, outcome: true },
+          },
+          _count: {
+            select: { reviews: true, assignments: true },
+          },
+        },
+      });
+    }
+
+    if (user?.role === 'AUTHOR') {
+      // For authors we can still include lightweight related data to keep frontend shape consistent
+      return this.prismaService.submission.findMany({
+        where: { authorId: user.sub },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          decision: {
+            select: { id: true, outcome: true },
+          },
+          _count: {
+            select: {
+              reviews: true,
+              assignments: true,
+            },
+          },
+        },
       });
     }
 
     return this.prismaService.submission.findMany({
-      where: { authorId: user.sub },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { decision: { decisionAt: 'desc' } },
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { title: { contains: query?.search || '', mode: 'insensitive' } },
+          { abstract: { contains: query?.search || '', mode: 'insensitive' } },
+          { keywords: { has: query?.search || '' } },
+        ],
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullname: true,
+          },
+        },
+      },
+      take: 1000,
     });
   }
 
@@ -79,5 +208,127 @@ export class SubmissionsService {
     });
 
     return publishedSubmission;
+  }
+
+  async assignSubmission(
+    user: AuthTokenPayload,
+    assignSubmissionDto: AssignSubmissionDto,
+  ) {
+    if (user.role !== 'ADMIN' && user.role !== 'EDITOR') {
+      throw new ForbiddenException(
+        'You do not have permission to assign reviewers',
+      );
+    }
+    const submission = await this.prismaService.submission.findFirst({
+      where: { id: assignSubmissionDto.submissionId },
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    if (submission.status === 'ACCEPTED' || submission.status === 'REJECTED') {
+      throw new ForbiddenException(
+        'Cannot assign reviewers to accepted or rejected submissions',
+      );
+    }
+
+    const [assignment] = await this.prismaService.$transaction([
+      this.prismaService.assignment.create({
+        data: {
+          submissionId: assignSubmissionDto.submissionId,
+          reviewerId: assignSubmissionDto.reviewerId,
+          editorId: user.sub,
+        },
+        include: {
+          reviewer: { select: { id: true, fullname: true } },
+          editor: { select: { id: true, fullname: true } },
+          submission: { select: { id: true } },
+        },
+      }),
+      this.prismaService.submission.update({
+        where: { id: assignSubmissionDto.submissionId },
+        data: { status: 'UNDER_REVIEW' },
+      }),
+    ]);
+
+    return assignment;
+  }
+
+  async reviewSubmission(
+    user: AuthTokenPayload,
+    submissionId: string,
+    reviewSubmissionDto: ReviewSubmissionDto,
+  ) {
+    const assignment = await this.prismaService.assignment.findFirst({
+      where: { submissionId, reviewerId: user.sub },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(
+        'Assignment not found for this submission and reviewer',
+      );
+    }
+
+    const existingReview = await this.prismaService.review.findFirst({
+      where: {
+        submissionId,
+        reviewerId: user.sub,
+      },
+    });
+
+    if (existingReview?.recommendation) {
+      throw new ForbiddenException(
+        'Cannot modify a review that has been finalized with ACCEPT or REJECT recommendation',
+      );
+    }
+
+    const review = existingReview
+      ? await this.prismaService.review.update({
+          where: { id: existingReview.id },
+          data: {
+            ...reviewSubmissionDto,
+          },
+        })
+      : await this.prismaService.review.create({
+          data: {
+            submissionId,
+            reviewerId: user.sub,
+            ...reviewSubmissionDto,
+          },
+        });
+
+    return review;
+  }
+
+  async createDecision(
+    user: AuthTokenPayload,
+    submissionId: string,
+    createDecisionDto: CreateDecisionDto,
+  ) {
+    const submission = await this.prismaService.submission.findFirst({
+      where: { id: submissionId },
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    const [decision] = await this.prismaService.$transaction([
+      this.prismaService.decision.create({
+        data: {
+          submissionId,
+          editorId: user.sub,
+          outcome: createDecisionDto.outcome,
+          letterPath: createDecisionDto.letterPath,
+        },
+      }),
+      this.prismaService.submission.update({
+        where: { id: submissionId },
+        data: { status: createDecisionDto.outcome },
+      }),
+    ]);
+
+    return decision;
   }
 }

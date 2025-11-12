@@ -16,3 +16,16 @@ export enum SubmissionStatus {
   REJECTED = "REJECTED",
   PUBLISHED = "PUBLISHED",
 }
+
+export enum Recommendation {
+  ACCEPT = "ACCEPT",
+  MINOR_REVISION = "MINOR_REVISION",
+  MAJOR_REVISION = "MAJOR_REVISION",
+  REJECT = "REJECT",
+}
+
+export enum DecisionOutcome {
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+  REVISION_REQUIRED = "REVISION_REQUIRED",
+}

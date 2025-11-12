@@ -47,10 +47,10 @@ const UserTable: React.FC<Props> = ({ data }) => {
       return res.data;
     },
 
-    onSuccess: (_, { id }) => {
+    onSuccess: (_, { id, role }) => {
       const user = data.find((u) => u.id === id);
 
-      toast.success(`User ${user?.fullname} is now a ${user?.role}`);
+      toast.success(`User ${user?.fullname} is now a ${role}`);
     },
 
     onError: (err) => {

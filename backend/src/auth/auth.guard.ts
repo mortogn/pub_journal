@@ -8,12 +8,14 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthTokenPayload } from './token.type';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private reflector: Reflector,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -36,8 +38,15 @@ export class AuthGuard implements CanActivate {
     try {
       const payload: AuthTokenPayload =
         await this.jwtService.verifyAsync(token);
-      // You can attach the payload to the request object if needed
-      request['user'] = payload;
+
+      const user = await this.prismaService.user.findUnique({
+        where: { id: payload.sub },
+        select: {
+          role: true,
+        },
+      });
+      // Attach payload to the request, preferring DB role when available; fallback to JWT role
+      request['user'] = { ...payload, role: user?.role ?? payload.role };
     } catch {
       throw new UnauthorizedException('Please log in to continue.');
     }

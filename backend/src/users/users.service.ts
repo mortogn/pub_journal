@@ -49,4 +49,22 @@ export class UsersService {
 
     return updatedUser;
   }
+
+  async listReviewers(user: AuthTokenPayload) {
+    if (user.role !== 'ADMIN' && user.role !== 'EDITOR') {
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
+    }
+
+    return this.prismaService.user.findMany({
+      where: { role: 'REVIEWER' },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        fullname: true,
+        email: true,
+      },
+    });
+  }
 }

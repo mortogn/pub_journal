@@ -75,12 +75,17 @@ export default function SubmissionDetailsClientPage({ submissionId }: Props) {
           <Button
             size="sm"
             onClick={() => publishMutation.mutate()}
-            disabled={publishMutation.isPending}
+            disabled={
+              publishMutation.isPending ||
+              submission?.status !== SubmissionStatus.DRAFT
+            }
           >
             {publishMutation.isPending ? (
               <span className="flex items-center gap-2">
                 <Spinner className="size-4" /> Publishing...
               </span>
+            ) : submission?.status !== SubmissionStatus.DRAFT ? (
+              "Published"
             ) : (
               "Publish"
             )}
@@ -170,6 +175,27 @@ export default function SubmissionDetailsClientPage({ submissionId }: Props) {
                     View / Download
                   </a>
                 </Button>
+              </div>
+            </section>
+          )}
+
+          {submission.reviews && submission.reviews.length > 0 && (
+            <section>
+              <h3 className="text-sm font-medium tracking-wide text-muted-foreground">
+                Comments of Reviewers
+              </h3>
+
+              <div className="divide-y px-4 py-3">
+                {submission.reviews.map((review, i) =>
+                  review.commentsToAuthor ? (
+                    <div key={review.id} className="p-3 flex items-start gap-2">
+                      <span className="text-xl font-bold">{i + 1}</span>
+                      <p className="text-sm tracking-wide">
+                        {review.commentsToAuthor}
+                      </p>
+                    </div>
+                  ) : null
+                )}
               </div>
             </section>
           )}
