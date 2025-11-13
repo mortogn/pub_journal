@@ -11,6 +11,9 @@ import { SubmissionsModule } from './submissions/submissions.module';
 import { R2Module } from './r2/r2.module';
 import { FilesModule } from './files/files.module';
 import { UsersModule } from './users/users.module';
+import { ResendModule } from './resend/resend.module';
+import { EmailsModule } from './emails/emails.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -23,10 +26,13 @@ import { UsersModule } from './users/users.module';
       global: true,
       secret: process.env.JWT_SECRET || 'defaultSecret',
     }),
+    EventEmitterModule.forRoot(),
     SubmissionsModule,
     R2Module,
     FilesModule,
     UsersModule,
+    ResendModule,
+    EmailsModule,
   ],
   controllers: [AppController],
   providers: [

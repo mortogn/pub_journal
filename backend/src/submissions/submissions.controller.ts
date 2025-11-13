@@ -24,12 +24,14 @@ export class SubmissionsController {
   }
 
   @Get('')
+  listSubmissions(@CurrentUser() user?: AuthTokenPayload) {
+    return this.submissionsService.listSubmissions(user);
+  }
+
+  @Get('public')
   @Public()
-  listSubmissions(
-    @Query() query: SubmissionQueryDto,
-    @CurrentUser() user?: AuthTokenPayload,
-  ) {
-    return this.submissionsService.listSubmissions(user, query);
+  listSubmissionPublic(@Query() query: SubmissionQueryDto) {
+    return this.submissionsService.listSubmissionPublic(query);
   }
 
   @Get(':id')

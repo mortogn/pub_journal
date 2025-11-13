@@ -8,8 +8,11 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import React from "react";
 import { getCookie } from "cookies-next";
+import { useAuthContext } from "@/contexts/auth-context";
 
 export default function SubmissionsClientPage() {
+  const { currentUser } = useAuthContext();
+
   const {
     data: { data: submissions } = {},
     isLoading,

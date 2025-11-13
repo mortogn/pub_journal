@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submission Published — Awaiting Editor Acceptance</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial;
+        color: #111;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        border-bottom: 1px solid #e6e6e6;
+        padding-bottom: 12px;
+        margin-bottom: 18px;
+      }
+      .footer {
+        font-size: 13px;
+        color: #666;
+        margin-top: 24px;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 12px;
+      }
+      a {
+        color: #0366d6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Submission Published</h2>
+      </div>
+
+      <p>Hi {{author_name}},</p>
+
+      <p>
+        Good news — your submission titled
+        <strong>"{{submission_title}}"</strong> has been published to our system
+        and is now awaiting editor acceptance.
+      </p>
+
+      <p>
+        You can view the submission here:
+        <a href="{{submission_url}}">Open submission</a>
+      </p>
+
+      <p>
+        If you need to make changes or have questions, contact the editorial
+        team.
+      </p>
+
+      <div class="footer">
+        <p>Thanks,<br />The PUB Journals Team</p>
+        <p style="color: #999; font-size: 12px">
+          This is an automated message. Do not reply to this email unless
+          instructed.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!--
+Plain-text fallback for systems that prefer text (optional):
+
+Hi {{author_name}},
+
+Good news — your submission titled "{{submission_title}}" has been published to our system and is now awaiting editor acceptance.
+
+View it here: {{submission_url}}
+
+Thanks,
+The {{journal_name}} Team
+-->

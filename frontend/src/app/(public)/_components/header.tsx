@@ -6,6 +6,13 @@ import { useAuthContext } from "@/contexts/auth-context";
 import Link from "next/link";
 import React from "react";
 
+const ROLEtoRoleMap = {
+  AUTHOR: "author",
+  REVIEWER: "reviewer",
+  EDITOR: "editor",
+  ADMIN: "admin",
+};
+
 const Header = () => {
   const { currentUser } = useAuthContext();
 
@@ -17,9 +24,11 @@ const Header = () => {
 
       {currentUser ? (
         <div>
-          <span className="font-medium underline text-sm">
-            {currentUser.fullname} ({currentUser.role})
-          </span>
+          <Link href={`/app/${ROLEtoRoleMap[currentUser.role]}/dashboard`}>
+            <span className="font-medium underline text-sm">
+              {currentUser.fullname} ({currentUser.role})
+            </span>
+          </Link>
         </div>
       ) : (
         <div className="flex items-center gap-2">

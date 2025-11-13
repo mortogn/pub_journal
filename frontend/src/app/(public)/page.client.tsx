@@ -12,12 +12,15 @@ import api from "@/lib/api";
 import { type Submission as TSubmission } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { SearchIcon } from "lucide-react";
+import { useState } from "react";
 
 export default function HomeClientPage() {
+  const [search, setSearch] = useState("");
+
   const { data: submissionRes } = useQuery({
-    queryKey: ["submissions", "public"],
+    queryKey: ["submissions", "public", search],
     queryFn: async () => {
-      return api<TSubmission[]>(`/submissions`, {
+      return api<TSubmission[]>(`/submissions/public?search=${search}`, {
         method: "GET",
       });
     },
@@ -25,9 +28,13 @@ export default function HomeClientPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <InputGroup className="h-12">
-          <InputGroupInput className="text-lg" placeholder="Search..." />
+      <div className="mb-6 w-full">
+        <InputGroup className="h-12 w-full">
+          <InputGroupInput
+            className="text-lg"
+            placeholder="Search..."
+            onChange={(e) => setSearch(e.target.value!)}
+          />
           <InputGroupAddon>
             <SearchIcon className="size-6" />
           </InputGroupAddon>

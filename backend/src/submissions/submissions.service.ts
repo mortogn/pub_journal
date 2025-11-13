@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -10,10 +11,19 @@ import { AssignSubmissionDto } from './dto/assign-submission.dto';
 import { ReviewSubmissionDto } from './dto/review-submission.dto';
 import { CreateDecisionDto } from './dto/create-decision.dto';
 import { SubmissionQueryDto } from './dto/submission-query.dto';
+import { SubmissionPublishedEvent } from './events/submission-published.event';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SubmissionAcceptedEvent } from './events/submission-accepted.event';
+import { ConfigService } from '@nestjs/config';
+import { ReviewerAssignedEvent } from './events/reviewer-assgined.event';
 
 @Injectable()
 export class SubmissionsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private eventEmitter: EventEmitter2,
+    private readonly configService: ConfigService,
+  ) {}
 
   async createSubmission(
     userId: string,
@@ -102,7 +112,7 @@ export class SubmissionsService {
     return submission;
   }
 
-  async listSubmissions(user?: AuthTokenPayload, query?: SubmissionQueryDto) {
+  async listSubmissions(user?: AuthTokenPayload) {
     if (user?.role === 'ADMIN' || user?.role === 'EDITOR') {
       return this.prismaService.submission.findMany({
         orderBy: { createdAt: 'desc' },
@@ -170,7 +180,9 @@ export class SubmissionsService {
         },
       });
     }
+  }
 
+  async listSubmissionPublic(query?: SubmissionQueryDto) {
     return this.prismaService.submission.findMany({
       orderBy: { decision: { decisionAt: 'desc' } },
       where: {
@@ -202,10 +214,37 @@ export class SubmissionsService {
       throw new NotFoundException('Submission not found');
     }
 
-    const publishedSubmission = await this.prismaService.submission.update({
-      where: { id },
-      data: { status: 'PUBLISHED' },
-    });
+    const [publishedSubmission, author] = await Promise.all([
+      this.prismaService.submission.update({
+        where: { id },
+        data: { status: 'PUBLISHED' },
+      }),
+      this.prismaService.user.findFirst({
+        where: { id: userId },
+        select: {
+          fullname: true,
+          email: true,
+        },
+      }),
+    ]);
+
+    if (!author) {
+      throw new NotFoundException('Author not found');
+    }
+
+    // const publishedSubmission = await this.prismaService.submission.update({
+    //   where: { id },
+    //   data: { status: 'PUBLISHED' },
+    // });
+
+    const publishSubmissionEvent = new SubmissionPublishedEvent(
+      publishedSubmission.id,
+      author.fullname,
+      author.email,
+      submission.title,
+    );
+
+    this.eventEmitter.emit('submission.published', publishSubmissionEvent);
 
     return publishedSubmission;
   }
@@ -241,9 +280,9 @@ export class SubmissionsService {
           editorId: user.sub,
         },
         include: {
-          reviewer: { select: { id: true, fullname: true } },
+          reviewer: { select: { id: true, fullname: true, email: true } },
           editor: { select: { id: true, fullname: true } },
-          submission: { select: { id: true } },
+          submission: { select: { id: true, title: true } },
         },
       }),
       this.prismaService.submission.update({
@@ -251,6 +290,16 @@ export class SubmissionsService {
         data: { status: 'UNDER_REVIEW' },
       }),
     ]);
+
+    const reviewerAssginedEmail = new ReviewerAssignedEvent(
+      assignment.reviewer.fullname,
+      assignment.reviewer.email,
+      assignment.submission.title,
+      assignment.submission.id,
+      // assignSubmissionDto.dueDate,
+    );
+
+    this.eventEmitter.emit('reviewer.assigned', reviewerAssginedEmail);
 
     return assignment;
   }
@@ -314,20 +363,56 @@ export class SubmissionsService {
       throw new NotFoundException('Submission not found');
     }
 
-    const [decision] = await this.prismaService.$transaction([
-      this.prismaService.decision.create({
-        data: {
-          submissionId,
-          editorId: user.sub,
-          outcome: createDecisionDto.outcome,
-          letterPath: createDecisionDto.letterPath,
-        },
-      }),
-      this.prismaService.submission.update({
-        where: { id: submissionId },
-        data: { status: createDecisionDto.outcome },
-      }),
-    ]);
+    const [decision, _, updatedSubmission, editor] =
+      await this.prismaService.$transaction([
+        this.prismaService.decision.create({
+          data: {
+            submissionId,
+            editorId: user.sub,
+            outcome: createDecisionDto.outcome,
+            letterPath: createDecisionDto.letterPath,
+          },
+        }),
+        this.prismaService.submission.update({
+          where: { id: submissionId },
+          data: { status: createDecisionDto.outcome },
+        }),
+        this.prismaService.submission.findFirst({
+          where: { id: submissionId },
+          include: {
+            author: {
+              select: {
+                email: true,
+                fullname: true,
+              },
+            },
+          },
+        }),
+
+        this.prismaService.user.findFirst({
+          where: { id: user.sub },
+          select: { fullname: true },
+        }),
+      ]);
+
+    if (!updatedSubmission) {
+      throw new InternalServerErrorException(
+        'Failed to retrieve updated submission',
+      );
+    }
+
+    const submissionAcceptedEvent = new SubmissionAcceptedEvent(
+      updatedSubmission.author.fullname,
+      updatedSubmission.id,
+      updatedSubmission.title,
+      editor?.fullname || 'Editor',
+      updatedSubmission.author.email,
+      decision.letterPath
+        ? `${this.configService.get<string>('R2_BUCKET_BASE_URL')}/${decision.letterPath}`
+        : undefined,
+    );
+
+    this.eventEmitter.emit('submission.accepted', submissionAcceptedEvent);
 
     return decision;
   }
