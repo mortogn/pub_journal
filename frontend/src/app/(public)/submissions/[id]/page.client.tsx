@@ -27,6 +27,7 @@ export default function PublicSubmissionDetailsClientPage({
         <Link
           href={`${process.env.NEXT_PUBLIC_FILE_BASE_URL}/${submissionRes?.data.manuscriptPath}`}
           className="my-2  text-base tracking-wide underline"
+          target="_blank"
         >
           View/Open Manuscript
         </Link>

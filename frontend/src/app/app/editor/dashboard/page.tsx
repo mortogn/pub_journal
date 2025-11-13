@@ -2,36 +2,34 @@
 
 import React, { useEffect, useState } from "react";
 import { StatCard } from "@/components/common/stat-card";
-import { AuthorStats } from "@/types";
+import { EditorStats } from "@/types";
 import {
-  FileText,
-  FilePen,
-  Send,
-  Eye,
+  ClipboardList,
+  CheckCircle2,
+  Clock,
   CheckCircle,
   XCircle,
-  Globe,
   FileEdit,
 } from "lucide-react";
 import api from "@/lib/api";
 import { getCookie } from "cookies-next";
 
-export default function AuthorDashboardPage() {
-  const [stats, setStats] = useState<AuthorStats | null>(null);
+export default function EditorDashboardPage() {
+  const [stats, setStats] = useState<EditorStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const token = getCookie("ac-token");
-        const response = await api<AuthorStats>("/stats/author", {
+        const response = await api<EditorStats>("/stats/editor", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         setStats(response.data);
       } catch (error) {
-        console.error("Failed to fetch author stats:", error);
+        console.error("Failed to fetch editor stats:", error);
       } finally {
         setLoading(false);
       }
@@ -50,46 +48,46 @@ export default function AuthorDashboardPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Author Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">Editor Dashboard</h1>
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold mb-4">My Submissions</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <h2 className="text-xl font-semibold mb-4">Assignment Overview</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <StatCard
-              title="Total Submissions"
-              value={stats.totalSubmissions}
-              icon={FileText}
-            />
-            <StatCard title="Drafts" value={stats.draftCount} icon={FilePen} />
-            <StatCard
-              title="Submitted"
-              value={stats.submittedCount}
-              icon={Send}
+              title="Total Assignments"
+              value={stats.totalAssignments}
+              icon={ClipboardList}
             />
             <StatCard
-              title="Under Review"
-              value={stats.underReviewCount}
-              icon={Eye}
+              title="Completed Decisions"
+              value={stats.completedDecisions}
+              icon={CheckCircle2}
             />
+            <StatCard
+              title="Pending Decisions"
+              value={stats.pendingDecisions}
+              icon={Clock}
+            />
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Decisions Made</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <StatCard
               title="Accepted"
-              value={stats.acceptedCount}
+              value={stats.acceptedDecisions}
               icon={CheckCircle}
             />
             <StatCard
               title="Rejected"
-              value={stats.rejectedCount}
+              value={stats.rejectedDecisions}
               icon={XCircle}
             />
             <StatCard
-              title="Published"
-              value={stats.publishedCount}
-              icon={Globe}
-            />
-            <StatCard
               title="Revision Required"
-              value={stats.revisionRequiredCount}
+              value={stats.revisionRequiredDecisions}
               icon={FileEdit}
             />
           </div>

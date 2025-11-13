@@ -43,7 +43,7 @@ export default function HomeClientPage() {
       <h2 className="text-2xl font-semibold tracking-tight my-2">
         Recent Submissions
       </h2>
-      <div className="mt-4">
+      <div className="mt-4 space-y-4">
         {submissionRes?.data.map((submission) => (
           <PublicSubmissionCard key={submission.id} data={submission} />
         ))}

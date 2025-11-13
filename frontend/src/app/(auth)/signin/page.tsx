@@ -20,12 +20,12 @@ export default function SignInPage() {
       <LoginForm />
       <div className="flex items-center justify-center flex-col mt-4 tracking-wide">
         <Link href="/forgot-password">
-          <span className="text-sm text-primary hover:underline">
+          <span className="text-sm text-foreground hover:underline">
             Forgot your password? Reset it here
           </span>
         </Link>
         <Link href="/signup">
-          <span className="text-sm text-primary hover:underline">
+          <span className="text-sm text-foreground hover:underline">
             Don&apos;t have an account? Sign up
           </span>
         </Link>

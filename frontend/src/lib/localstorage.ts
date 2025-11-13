@@ -17,3 +17,7 @@ export const localstorageRemove = (key: LocalStorageKey) => {
     localStorage.removeItem(key);
   }
 };
+
+export const getAccessToken = () => {
+  return localstorageGet("authToken");
+};

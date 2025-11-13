@@ -14,6 +14,7 @@ import { UsersModule } from './users/users.module';
 import { ResendModule } from './resend/resend.module';
 import { EmailsModule } from './emails/emails.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     UsersModule,
     ResendModule,
     EmailsModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [
